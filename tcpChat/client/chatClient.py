@@ -35,7 +35,7 @@ top.title("Chat")
 
 messages_frame = tkinter.Frame(top)
 my_msg = tkinter.StringVar()
-my_msg.set("Name")
+my_msg.set("")
 yscrollbar = tkinter.Scrollbar(messages_frame)
 
 msg_list = tkinter.Listbox(messages_frame, height=20, width=60, yscrollcommand=yscrollbar.set)
