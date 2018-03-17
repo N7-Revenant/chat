@@ -2,6 +2,7 @@
 #TODO: add actual connection to DB later, for now let's work with files
 
 import re
+import hashlib
 
 def authorise(login, password):
 	user_authorised = False
@@ -10,7 +11,7 @@ def authorise(login, password):
 		for line in users:
 			line = re.sub('\n', '', line)
 			line = re.split(' ', line)
-			if line[0] == login and line[1] == password:
+			if line[0] == login and line[1] == hashlib.md5(password.encode()).hexdigest():
 				user_authorised =  True
 				break
 		users.close()
@@ -46,10 +47,9 @@ def register(login, password):
 	else:
 		try:
 			users = open('users.txt', 'a')
-			users.write(login+' '+password+'\n')
+			users.write(login+' '+hashlib.md5(password.encode()).hexdigest()+'\n')
 			users.close()
 			return True, 'New user added successefully.'
 		except:
 			return False, 'Internal error'
-		
 
