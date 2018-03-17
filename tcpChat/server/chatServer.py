@@ -6,6 +6,8 @@ import threading
 import time
 import re
 
+import msgAnalyzer
+
 def  accept_connections():
 	"""Handling of incoming clients"""
 	
@@ -14,17 +16,19 @@ def  accept_connections():
 		print("%s:%s has connected." % client_address)
 		client.send(bytes("Connection established.", "utf-8"))
 		#--Added for future use--
-		#time.sleep(0.03)
+		#time.sleep(0.08)
 		#client.send(bytes("Type login <login> <password> to enter as existing user.", "utf-8"))
-		#time.sleep(0.03)
+		#time.sleep(0.08)
 		#client.send(bytes("Type regitster <login> <password> to enter as new user.", "utf-8"))
-		#time.sleep(0.03)
+		#time.sleep(0.08)
 		#client.send(bytes("Type msg <login> <text> to send message for specific user.", "utf-8"))
-		#time.sleep(0.03)
-		#client.send(bytes("Type msgall <text> to send message for all users online.", "utf-8"))
 		#-----------------
-		time.sleep(0.03)
-		client.send(bytes("Type {logout} to quit.", "utf-8"))
+		time.sleep(0.08)
+		client.send(bytes("Type msgall <text> to send message for all users online.", "utf-8"))
+		time.sleep(0.08)
+		client.send(bytes("Type logout to quit.", "utf-8"))
+		time.sleep(0.08)
+		client.send(bytes("But first: please input your name.", "utf-8"))
 		addresses[client] = client_address
 		threading.Thread(target=handle_client, args=(client,)).start()
 
@@ -33,10 +37,16 @@ def handle_client(client):
 	"""Handles client connection"""
 	
 	name = client.recv(BUFFER_SIZE).decode("utf-8")
-	if name == "{logout}":
-		delete_client(client)
-		return
-	welcome = 'Welcome %s! If you want to quit, type {logout} to exit.' % name
+	command, text = msgAnalyzer.analyze(name)
+	if command in commands:
+		if command == "logout":
+			delete_client(client)
+			return
+		else:
+			client.send(bytes("No commands allowed in names. I name you Buster", "utf-8"))
+			name = 'Buster'
+			time.sleep(0.08)
+	welcome = 'Welcome %s!' % name
 	client.send(bytes(welcome, "utf-8"))
 	msg = "%s has joined chat!" % name
 	broadcast_message(bytes(msg, "utf-8"))
@@ -44,13 +54,17 @@ def handle_client(client):
 
 	while True:
 		msg = client.recv(BUFFER_SIZE)
-		if msg != bytes("{logout}", "utf-8"):
-			broadcast_message(msg, name+": ")
+		command, text = msgAnalyzer.analyze(msg.decode('utf-8'))
+		if command in commands:
+			if command == 'msgall':
+				broadcast_message(bytes(text, "utf-8"), name+": ")
+			elif command == 'logout':
+				delete_client(client)
+				del clients[client]
+				broadcast_message(bytes("%s has left the chat." % name, "utf-8"))
+				break
 		else:
-			delete_client(client)
-			del clients[client]
-			broadcast_message(bytes("%s has left the chat." % name, "utf-8"))
-			break
+			client.send(bytes("Unknown command %s" % command, "utf-8"))
 
 def broadcast_message(msg, prefix=""):
 	"""Broadcast a message to all active clients"""
@@ -61,8 +75,10 @@ def broadcast_message(msg, prefix=""):
 clients = {}
 addresses = {}
 
+commands = ('msgall', 'logout')
+
 def delete_client(client):
-	client.send(bytes("{logout}", "utf-8"))
+	client.send(bytes("logout", "utf-8"))
 	client.close()
 	print ("%s:%s has disconnected" % addresses[client])
 

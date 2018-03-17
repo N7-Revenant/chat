@@ -21,13 +21,13 @@ def send(event=None):
 	if msg != "":
 		my_msg.set("")
 		client_socket.send(bytes(msg, "utf-8"))
-		if msg == "{logout}":
+		if msg == "logout":
 			client_socket.close()
 			top.quit()
 
 def onClosing(event=None):
 	"""EventHandler for window closing"""
-	my_msg.set("{logout}")
+	my_msg.set("logout")
 	send()
 
 top = tkinter.Tk()
@@ -35,7 +35,7 @@ top.title("Chat")
 
 messages_frame = tkinter.Frame(top)
 my_msg = tkinter.StringVar()
-my_msg.set("")
+my_msg.set("Name")
 yscrollbar = tkinter.Scrollbar(messages_frame)
 
 msg_list = tkinter.Listbox(messages_frame, height=20, width=60, yscrollcommand=yscrollbar.set)
