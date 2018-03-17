@@ -4,32 +4,37 @@
 import re
 
 def authorise(login, password):
+	user_authorised = False
 	try:
 		users = open('users.txt')
 		for line in users:
 			line = re.sub('\n', '', line)
 			line = re.split(' ', line)
 			if line[0] == login and line[1] == password:
-				return True
-			else:
-				return False
+				user_authorised =  True
+				break
 		users.close()
 	except:
-		return False
+		pass
+
+	return user_authorised
 
 def check_user_exist(login):
+	user_found = False
+
 	try:
 		users = open('users.txt')
 		for line in users:
 			line = re.sub('\n', '', line)
 			line = re.split(' ', line)
 			if line[0] == login:
-				return True
-			else:
-				return False
+				user_found =  True
+				break
 		users.close()
 	except:
-		return False
+		pass
+	
+	return user_found
 
 def register(login, password):
 	if len(login) < 3:

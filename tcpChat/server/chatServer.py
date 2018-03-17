@@ -21,8 +21,8 @@ def  accept_connections():
 		client.send(bytes("Type login <login> <password> to enter as existing user.", "utf-8"))
 		time.sleep(0.08)
 		client.send(bytes("Type regitster <login> <password> to enter as new user.", "utf-8"))
-		#time.sleep(0.08)
-		#client.send(bytes("Type msg <login> <text> to send message for specific user.", "utf-8"))
+		time.sleep(0.08)
+		client.send(bytes("Type msg <login> <text> to send message for specific user.", "utf-8"))
 		time.sleep(0.08)
 		client.send(bytes("Type msgall <text> to send message for all users online.", "utf-8"))
 		time.sleep(0.08)
@@ -93,11 +93,25 @@ def handle_client(client):
 		if command in commands:
 			if command == 'msgall':
 				broadcast_message(bytes(text, "utf-8"), login+": ")
+			elif command == 'msg':
+				target, text = slice_word(text)
+				if not connectDB.check_user_exist(target):
+					client.send(bytes("User %s doesn't exist" % target, "utf-8"))
+				elif target not in list(clients.values()):
+					client.send(bytes("User %s isn't online" % target, "utf-8"))
+				else:
+					for socket, user in clients.items():
+						if user == target:
+							socket.send(bytes(login+"->"+target+": "+text, "utf-8"))
+							client.send(bytes(login+"->"+target+": "+text, "utf-8"))
+					
 			elif command == 'logout':
 				delete_client(client)
 				del clients[client]
 				broadcast_message(bytes("%s has left the chat." % login, "utf-8"))
 				break
+			else:
+				client.send(bytes("Command %s is unavailable. You're already logged in." % command, "utf-8"))
 		else:
 			client.send(bytes("Unknown command %s" % command, "utf-8"))
 
@@ -110,7 +124,7 @@ def broadcast_message(msg, prefix=""):
 clients = {}
 addresses = {}
 
-commands = ('register', 'login', 'msgall', 'logout')
+commands = ('register', 'login', 'msg', 'msgall', 'logout')
 
 def delete_client(client):
 	client.send(bytes("logout", "utf-8"))
@@ -142,7 +156,7 @@ SERVER = socket.socket()
 SERVER.bind(ADDR)
 
 if __name__ == "__main__":
-	SERVER.listen(5)
+	SERVER.listen(8)
 	print("Server started. Waiting for connections...")
 	ACCEPT_THREAD = threading.Thread(target=accept_connections)
 	ACCEPT_THREAD.start()
