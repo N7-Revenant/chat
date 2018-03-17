@@ -1,0 +1,4 @@
+-=Network configuration=-
+HOST=
+PORT=9029
+BUFFER_SIZE=1024
