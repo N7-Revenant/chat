@@ -2,3 +2,9 @@
 HOST=
 PORT=9029
 BUFFER_SIZE=1024
+
+-=Database configuration=-
+DB_USER=chat
+DB_PASS=Rfv753
+DB_HOST=localhost
+DB_NAME=tcpChat

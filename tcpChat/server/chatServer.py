@@ -5,8 +5,9 @@ import socket
 import threading
 import time
 import re
+import mysql.connector
 
-import connectDB
+import requestSender
 
 def  accept_connections():
 	"""Handling of incoming clients"""
@@ -57,7 +58,7 @@ def handle_client(client):
 				if login in list(clients.values()):
 					client.send(bytes("User already online", "utf-8"))
 					continue
-				elif not(connectDB.authorise(login, password)):
+				elif not(requestSender.authorise(cursor, login, password)):
 					client.send(bytes("Wrong login/password combination", "utf-8"))
 					continue
 
@@ -67,8 +68,9 @@ def handle_client(client):
 					client.send(bytes("User already exists and online", "utf-8"))
 					continue
 
-				registered, message = connectDB.register(login, password)
+				registered, message = requestSender.register(cursor, login, password)
 				if registered:
+					connection.commit()
 					client.send(bytes(message, "utf-8"))
 					time.sleep(0.1)
 				else:
@@ -95,7 +97,7 @@ def handle_client(client):
 				broadcast_message(text, login)
 			elif command == 'msg':
 				target, text = slice_word(text)
-				if not connectDB.check_user_exist(target):
+				if not requestSender.check_user_exist(cursor, target):
 					client.send(bytes("User %s doesn't exist" % target, "utf-8"))
 				elif target not in list(clients.values()):
 					client.send(bytes("User %s isn't online" % target, "utf-8"))
@@ -103,6 +105,7 @@ def handle_client(client):
 					for socket, user in clients.items():
 						if user == target:
 							private_message(client, socket, text)
+							connection.commit()
 					
 			elif command == 'logout':
 				delete_client(client)
@@ -121,11 +124,12 @@ def broadcast_message(msg, login=''):
 	
 	if len(login) != 0:
 		prefix = login+': '
+		requestSender.log_message(cursor, time_stamp, login, 'All users', msg)
+		connection.commit()
 	
 	for sock in clients:
 		sock.send(bytes(prefix+msg, "utf-8"))
-		if prefix!='':
-			connectDB.log_message(time_stamp, login, '<broadcast>', msg)
+			
 
 def private_message(sender, reciver, message_text):
 	"""Send private message to specific usser"""
@@ -135,7 +139,7 @@ def private_message(sender, reciver, message_text):
 	reciver.send(bytes(login+"->"+target+": "+message_text, "utf-8"))
 	sender.send(bytes(login+"->"+target+": "+message_text, "utf-8"))
 
-	connectDB.log_message(time_stamp, login, target, message_text)
+	requestSender.log_message(cursor, time_stamp, login, target, message_text)
 
 def delete_client(client):
 	client.send(bytes("logout", "utf-8"))
@@ -152,6 +156,11 @@ HOST = ''
 PORT = 9029
 BUFFER_SIZE = 1024
 
+DB_USER='chat'
+DB_PASS='Rfv753'
+DB_HOST='localhost'
+DB_NAME='tcpChat'
+
 try:
 	config=open('config.txt')
 	for line in config:
@@ -163,11 +172,23 @@ try:
 			PORT = int(line[1])
 		elif line[0] == 'BUFFER_SIZE':
 			BUFFER_SIZE = int(line[1])
+		elif line[0] == 'DB_USER':
+			DB_USER = line[1]
+		elif line[0] == 'DB_PASS':
+			DB_PASS = line[1]
+		elif line[0] == 'DB_HOST':
+			DB_HOST = line[1]
+		elif line[0] == 'DB_NAME':
+			DB_NAME = line[1]
+		
 	config.close()
 except:
 	pass
 
 ADDR = (HOST, PORT)
+
+connection = mysql.connector.connect(user=DB_USER, password=DB_PASS, host=DB_HOST, database=DB_NAME)
+cursor = connection.cursor()
 
 SERVER = socket.socket()
 SERVER.bind(ADDR)
