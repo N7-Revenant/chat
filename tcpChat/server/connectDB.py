@@ -53,3 +53,12 @@ def register(login, password):
 		except:
 			return False, 'Internal error'
 
+def log_message(time, sender, reciver, text):
+	log_entry = time+'\t'+sender+'\t'+reciver+'\t'+text+'\n'
+	try:
+		log = open('log.txt', 'a')
+		log.write(log_entry)
+		log.close()
+	except:
+		print("Error logging message: " + log_entry)
+

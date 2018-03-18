@@ -83,7 +83,7 @@ def handle_client(client):
 		welcome = 'Welcome %s!' % login
 		client.send(bytes(welcome, "utf-8"))
 		msg = "%s has joined chat!" % login
-		broadcast_message(bytes(msg, "utf-8"))
+		broadcast_message(msg)
 		clients[client] = login
 		break
 
@@ -92,7 +92,7 @@ def handle_client(client):
 		command, text = slice_word(msg.decode('utf-8'))
 		if command in commands:
 			if command == 'msgall':
-				broadcast_message(bytes(text, "utf-8"), login+": ")
+				broadcast_message(text, login)
 			elif command == 'msg':
 				target, text = slice_word(text)
 				if not connectDB.check_user_exist(target):
@@ -102,34 +102,51 @@ def handle_client(client):
 				else:
 					for socket, user in clients.items():
 						if user == target:
-							socket.send(bytes(login+"->"+target+": "+text, "utf-8"))
-							client.send(bytes(login+"->"+target+": "+text, "utf-8"))
+							private_message(client, socket, text)
 					
 			elif command == 'logout':
 				delete_client(client)
 				del clients[client]
-				broadcast_message(bytes("%s has left the chat." % login, "utf-8"))
+				broadcast_message("%s has left the chat." % login)
 				break
 			else:
 				client.send(bytes("Command %s is unavailable. You're already logged in." % command, "utf-8"))
 		else:
 			client.send(bytes("Unknown command %s" % command, "utf-8"))
 
-def broadcast_message(msg, prefix=""):
+def broadcast_message(msg, login=''):
 	"""Broadcast a message to all active clients"""
-
+	prefix = ''
+	time_stamp = time.ctime(time.time())
+	
+	if len(login) != 0:
+		prefix = login+': '
+	
 	for sock in clients:
-		sock.send(bytes(prefix, "utf-8")+msg)
+		sock.send(bytes(prefix+msg, "utf-8"))
+		if prefix!='':
+			connectDB.log_message(time_stamp, login, '<broadcast>', msg)
 
-clients = {}
-addresses = {}
+def private_message(sender, reciver, message_text):
+	"""Send private message to specific usser"""
+	login = clients[sender]
+	target = clients[reciver]
+	time_stamp = time.ctime(time.time())
+	reciver.send(bytes(login+"->"+target+": "+message_text, "utf-8"))
+	sender.send(bytes(login+"->"+target+": "+message_text, "utf-8"))
 
-commands = ('register', 'login', 'msg', 'msgall', 'logout')
+	connectDB.log_message(time_stamp, login, target, message_text)
 
 def delete_client(client):
 	client.send(bytes("logout", "utf-8"))
 	client.close()
 	print ("%s:%s has disconnected" % addresses[client])
+
+
+clients = {}
+addresses = {}
+
+commands = ('register', 'login', 'msg', 'msgall', 'logout')
 
 HOST = ''
 PORT = 9029
