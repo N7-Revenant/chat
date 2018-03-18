@@ -34,6 +34,7 @@ def  accept_connections():
 
 
 def slice_word(message):
+	"""Slices first word of the string"""
 	command = re.split(' ', message,1)
 	if len(command) == 1:
 		return command[0], ''
@@ -52,6 +53,7 @@ def handle_client(client):
 		if command in commands:
 			if command == "logout":
 				delete_client(client)
+				del addresses[client]
 				return
 			elif command == 'login':
 				login, password = slice_word(text)
@@ -80,8 +82,13 @@ def handle_client(client):
 				client.send(bytes("Register or Login first.", "utf-8"))
 				continue
 		else:
-			client.send(bytes("Unknown command %s" % command, "utf-8"))
-			continue
+			try:
+				client.send(bytes("Unknown command %s" % command, "utf-8"))
+				continue
+			except:
+				delete_client(client)
+				del addresses[client]
+				return
 		welcome = 'Welcome %s!' % login
 		client.send(bytes(welcome, "utf-8"))
 		msg = "%s has joined chat!" % login
@@ -110,12 +117,20 @@ def handle_client(client):
 			elif command == 'logout':
 				delete_client(client)
 				del clients[client]
+				del addresses[client]
 				broadcast_message("%s has left the chat." % login)
 				break
 			else:
 				client.send(bytes("Command %s is unavailable. You're already logged in." % command, "utf-8"))
 		else:
-			client.send(bytes("Unknown command %s" % command, "utf-8"))
+			try:
+				client.send(bytes("Unknown command %s" % command, "utf-8"))
+			except:
+				delete_client(client)
+				del clients[client]
+				del addresses[client]
+				broadcast_message("%s has left the chat." % login)
+				break
 
 def broadcast_message(msg, login=''):
 	"""Broadcast a message to all active clients"""
@@ -142,8 +157,12 @@ def private_message(sender, reciver, message_text):
 	requestSender.log_message(cursor, time_stamp, login, target, message_text)
 
 def delete_client(client):
-	client.send(bytes("logout", "utf-8"))
-	client.close()
+	"""Send logout command back to client and closes socket"""
+	try:
+		client.send(bytes("logout", "utf-8"))
+		client.close()
+	except:
+		pass
 	print ("%s:%s has disconnected" % addresses[client])
 
 
@@ -152,9 +171,9 @@ addresses = {}
 
 commands = ('register', 'login', 'msg', 'msgall', 'logout')
 
-HOST = ''
-PORT = 9029
-BUFFER_SIZE = 1024
+HOST=''
+PORT=9029,
+BUFFER_SIZE=1024
 
 DB_USER='chat'
 DB_PASS='Rfv753'
@@ -185,7 +204,7 @@ try:
 except:
 	pass
 
-ADDR = (HOST, PORT)
+ADDR = (HOST,PORT)
 
 connection = mysql.connector.connect(user=DB_USER, password=DB_PASS, host=DB_HOST, database=DB_NAME)
 cursor = connection.cursor()
@@ -193,10 +212,9 @@ cursor = connection.cursor()
 SERVER = socket.socket()
 SERVER.bind(ADDR)
 
-if __name__ == "__main__":
-	SERVER.listen(8)
-	print("Server started. Waiting for connections...")
-	ACCEPT_THREAD = threading.Thread(target=accept_connections)
-	ACCEPT_THREAD.start()
-	ACCEPT_THREAD.join()
-	SERVER.close()
+SERVER.listen(8)
+print("Server started. Waiting for connections...")
+ACCEPT_THREAD = threading.Thread(target=accept_connections)
+ACCEPT_THREAD.start()
+ACCEPT_THREAD.join()
+SERVER.close()

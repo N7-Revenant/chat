@@ -1,10 +1,10 @@
 """Handles DB connections for chatServer"""
-#TODO: add actual connection to DB later, for now let's work with files
 
 import re
 import hashlib
 
 def authorise(cursor, login, password):
+	"""User authorisation"""
 	user_authorised = False
 	try:
 		find_user = ("SELECT login FROM users WHERE login='"+login+"' AND password='"+str(hashlib.md5(password.encode()).hexdigest())+"'")
@@ -18,6 +18,7 @@ def authorise(cursor, login, password):
 	return user_authorised
 
 def check_user_exist(cursor, login):
+	"""Check for user existance"""
 	user_found = False
 	try:
 		find_user = ("SELECT login FROM users WHERE login='" + login + "'")
@@ -31,6 +32,7 @@ def check_user_exist(cursor, login):
 	return user_found
 
 def register(cursor, login, password):
+	"""Registration of new user"""
 	if len(login) < 3:
 		return False, 'Login must contain at least 3 symbols.'
 	elif len(password)< 3:
@@ -46,6 +48,7 @@ def register(cursor, login, password):
 			return False, 'Internal error'
 
 def log_message(cursor, time, sender, reciver, text):
+	"""Logging message"""
 	log_entry = time+'\t'+sender+'\t'+reciver+'\t'+text+'\n'
 	try:
 		log_message = ("INSERT INTO log (time, sender, reciver, message) VALUES (%s, %s, %s, %s)")
