@@ -108,9 +108,9 @@ def handle_client(client):
                 elif target not in list(clients.values()):
                     client.send(bytes("User %s isn't online" % target, "utf-8"))
                 else:
-                    for socket, user in clients.items():
+                    for sock, user in clients.items():
                         if user == target:
-                            private_message(client, socket, text)
+                            private_message(client, sock, text)
                             connection.commit()
 
             elif command == 'logout':
@@ -180,6 +180,7 @@ DB_USER = 'chat'
 DB_PASS = 'Rfv753'
 DB_HOST = 'localhost'
 DB_NAME = 'tcpChat'
+DB_PORT = 9021
 
 try:
     config=open('config.txt')
@@ -200,6 +201,8 @@ try:
             DB_HOST = line[1]
         elif line[0] == 'DB_NAME':
             DB_NAME = line[1]
+        elif line[0] == 'DB_PORT':
+            DB_PORT = int(line[1])
 
     config.close()
 
@@ -208,7 +211,7 @@ except:
 
 ADDRESS = (HOST, PORT)
 
-connection = mysql.connector.connect(user=DB_USER, password=DB_PASS, host=DB_HOST, database=DB_NAME)
+connection = mysql.connector.connect(user=DB_USER, password=DB_PASS, host=DB_HOST, database=DB_NAME, port=DB_PORT)
 cursor = connection.cursor()
 
 SERVER = socket.socket()

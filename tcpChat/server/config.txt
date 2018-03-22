@@ -8,3 +8,4 @@ DB_USER=chat
 DB_PASS=Rfv753
 DB_HOST=localhost
 DB_NAME=tcpChat
+DB_PORT=9021
