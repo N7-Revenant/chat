@@ -12,7 +12,7 @@ GRANT ALL ON tcpChat.* TO 'chat'@'%' IDENTIFIED BY 'Rfv753';
 FLUSH PRIVILEGES;
 EOS
 
-mysql -u chat -pRfv753 tcpChat << EOS
+mysql -u chat -pRfv753 tcpChat 2>/dev/null << EOS
 CREATE TABLE IF NOT EXISTS users (login VARCHAR(50), password VARCHAR(40));
 CREATE TABLE IF NOT EXISTS log (time VARCHAR(50), sender VARCHAR(50), receiver VARCHAR(50), message VARCHAR(255));
 EOS
